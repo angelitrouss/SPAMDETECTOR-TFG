@@ -26,7 +26,7 @@ class MainActivity : ComponentActivity() {
 
         // Mostrar la interfaz
         setContent {
-            Greeting("Angel")
+            Greeting("Ruiz")
         }
     }
 }
