@@ -14,7 +14,7 @@ class CallReceiver : BroadcastReceiver() {
             val numeroEntrante = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER)
 
             if (numeroEntrante != null) {
-                Toast.makeText(context, "Llamadaa entrante de: $numeroEntrante", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "Llamada entrante de: $numeroEntrante", Toast.LENGTH_LONG).show()
             }
         }
     }
