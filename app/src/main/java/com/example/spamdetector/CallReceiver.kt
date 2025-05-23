@@ -10,25 +10,33 @@ import android.telephony.TelephonyManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import java.text.SimpleDateFormat
+import java.util.*
 
 class CallReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         Log.d("CALL_RECEIVER", "Intent recibido")
 
-        //Verificamos que sea una acción del sistema para llamada
         val action = intent.action
         if (action == TelephonyManager.ACTION_PHONE_STATE_CHANGED) {
             val estado = intent.getStringExtra(TelephonyManager.EXTRA_STATE)
             Log.d("CALL_RECEIVER", "Estado de llamada: $estado")
 
             if (estado == TelephonyManager.EXTRA_STATE_RINGING) {
+                val numero = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER)
+                val fechaHora = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault())
+                    .format(Date())
+
+                // Guardar la última llamada detectada
+                UltimaLlamada.llamada = Llamada(numero = numero, fechaHora = fechaHora)
+
                 crearCanalDeNotificacion(context)
 
                 val builder = NotificationCompat.Builder(context, "canal_llamada")
                     .setSmallIcon(android.R.drawable.sym_call_incoming)
                     .setContentTitle("📞 Llamada entrante")
-                    .setContentText("SpamDetector esta detectando una llamada.")
+                    .setContentText("SpamDetector está detectando una llamada.")
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setAutoCancel(true)
 

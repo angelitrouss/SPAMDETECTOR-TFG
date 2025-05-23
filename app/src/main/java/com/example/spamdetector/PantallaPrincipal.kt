@@ -1,90 +1,103 @@
 package com.example.spamdetector
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.os.Build
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
+import androidx.compose.ui.unit.sp
 
 @Composable
-fun PantallaPrincipal(onSolicitarPermisos: () -> Unit) {
-    val context = LocalContext.current
-
-    // Variables con estado reactivo
-    var permisoTelefonoConcedido by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.READ_PHONE_STATE
-            ) == PackageManager.PERMISSION_GRANTED
-        )
-    }
-
-    var permisoNotificacionesConcedido by remember {
-        mutableStateOf(
-            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-                    ContextCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.POST_NOTIFICATIONS
-                    ) == PackageManager.PERMISSION_GRANTED
-        )
-    }
-
-    // Efecto que se ejecuta cada vez que vuelve la pantalla activa (como al aceptar permisos)
-    LaunchedEffect(Unit) {
-        permisoTelefonoConcedido = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.READ_PHONE_STATE
-        ) == PackageManager.PERMISSION_GRANTED
-
-        permisoNotificacionesConcedido = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-                ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) == PackageManager.PERMISSION_GRANTED
-    }
+fun PantallaPrincipal(
+    permisoTelefono: State<Boolean>,
+    permisoNotificacion: State<Boolean>,
+    onSolicitarPermisos: () -> Unit
+) {
+    val ultimaLlamada = UltimaLlamada.llamada
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top),
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = "📞 SpamDetector", style = MaterialTheme.typography.headlineSmall)
+        // ENCABEZADO
+        Text(
+            text = "📞 SpamDetector",
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
 
-        HorizontalDivider()
+        // TARJETAS DE PERMISOS
+        PermisoCard("📱 Permiso Teléfono", permisoTelefono.value)
+        PermisoCard("🔔 Permiso Notificaciones", permisoNotificacion.value)
 
-        Text(text = "Estado de permisos:", style = MaterialTheme.typography.bodyLarge)
-        Text("📱 Teléfono: ${if (permisoTelefonoConcedido) "Concedido ✅" else "No concedido ❌"}")
-        Text("🔔 Notificaciones: ${if (permisoNotificacionesConcedido) "Concedido ✅" else "No concedido ❌"}")
+        // SECCIÓN DE ÚLTIMA LLAMADA
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .background(Color(0xFFE0F7FA), RoundedCornerShape(12.dp))
+                .padding(16.dp)
+        ) {
+            Column {
+                Text("📲 Última llamada detectada", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                if (ultimaLlamada != null) {
+                    val numero = ultimaLlamada.numero ?: "Desconocido"
+                    Text("• $numero", fontSize = 14.sp)
+                    Text("🕒 ${ultimaLlamada.fechaHora}", fontSize = 13.sp, color = Color.DarkGray)
+                } else {
+                    Text("Aún no hay llamadas registradas", color = Color.DarkGray)
+                }
+            }
+        }
 
-        Button(onClick = {
-            onSolicitarPermisos()
-
-            // Refrescar el estado justo después de pedirlos
-            permisoTelefonoConcedido = ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.READ_PHONE_STATE
-            ) == PackageManager.PERMISSION_GRANTED
-
-            permisoNotificacionesConcedido = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-                    ContextCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.POST_NOTIFICATIONS
-                    ) == PackageManager.PERMISSION_GRANTED
-        }) {
+        // BOTÓN DE PERMISOS
+        Button(
+            onClick = { onSolicitarPermisos() },
+            modifier = Modifier.fillMaxWidth(0.9f)
+        ) {
             Text("Solicitar permisos manualmente")
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        // SECCIÓN DE HISTORIAL (placeholder)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .background(Color(0xFFF3E5F5), RoundedCornerShape(12.dp))
+                .padding(16.dp)
+        ) {
+            Column {
+                Text("📜 Historial de llamadas (próximamente)", fontWeight = FontWeight.Bold)
+                Text("Aquí aparecerá la lista con duración y estado", color = Color.DarkGray)
+            }
+        }
+    }
+}
 
-        Text("📋 Próximamente: listado de llamadas y bloqueo de spam", style = MaterialTheme.typography.bodySmall)
+@Composable
+fun PermisoCard(titulo: String, concedido: Boolean) {
+    val colorFondo = if (concedido) Color(0xFFDFF0D8) else Color(0xFFF2DEDE)
+    val colorTexto = if (concedido) Color(0xFF3C763D) else Color(0xFFA94442)
+    val estadoTexto = if (concedido) "Concedido ✅" else "No concedido ❌"
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth(0.9f)
+            .background(colorFondo, shape = RoundedCornerShape(12.dp))
+            .padding(16.dp)
+    ) {
+        Column {
+            Text(titulo, fontWeight = FontWeight.Bold, color = colorTexto)
+            Text(estadoTexto, color = colorTexto)
+        }
     }
 }
