@@ -1,4 +1,4 @@
-package com.ejemplo.spamdetector
+package com.example.spamdetector
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -8,13 +8,21 @@ import android.widget.Toast
 
 class CallReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        val estado = intent.getStringExtra(TelephonyManager.EXTRA_STATE)
+        // Asegurarse de que el evento recibido es del tipo PHONE_STATE
+        if (intent.action == TelephonyManager.ACTION_PHONE_STATE_CHANGED) {
 
-        if (estado == TelephonyManager.EXTRA_STATE_RINGING) {
-            val numeroEntrante = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER)
+            val estadoLlamada = intent.getStringExtra(TelephonyManager.EXTRA_STATE)
 
-            if (numeroEntrante != null) {
-                Toast.makeText(context, "Llamada entrante de: $numeroEntrante", Toast.LENGTH_LONG).show()
+            if (estadoLlamada == TelephonyManager.EXTRA_STATE_RINGING) {
+                val numeroEntrante = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER)
+
+                if (!numeroEntrante.isNullOrEmpty()) {
+                    Toast.makeText(
+                        context,
+                        "📞 Llamada entrante de: $numeroEntrante",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
             }
         }
     }

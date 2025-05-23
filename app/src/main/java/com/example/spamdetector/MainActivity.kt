@@ -1,4 +1,4 @@
-package com.ejemplo.spamdetector
+package com.example.spamdetector
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -7,31 +7,33 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
 class MainActivity : ComponentActivity() {
 
-    private val REQUEST_CODE = 100
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Verificar y solicitar permiso
-        val permiso = Manifest.permission.READ_PHONE_STATE
-        if (ContextCompat.checkSelfPermission(this, permiso) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(permiso), REQUEST_CODE)
+        // Solicitar permiso si no está concedido
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.READ_PHONE_STATE),
+                100
+            )
         }
 
-        // Mostrar la interfaz
+        // Mostrar mensaje en pantalla
         setContent {
-            Greeting("Angel")
+            TextoInicio()
         }
     }
 }
 
 @Composable
-fun Greeting(name: String) {
-    Text(text = "Hola $name, app funcionando 😊")
+fun TextoInicio() {
+    Text(text = "App iniciada. Esperando llamadas 📞")
 }
