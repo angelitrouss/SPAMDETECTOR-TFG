@@ -16,7 +16,7 @@ class CallReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         Log.d("CALL_RECEIVER", "Intent recibido")
 
-        // Verificamos que sea una acción del sistema para llamada
+        //Verificamos que sea una acción del sistema para llamada
         val action = intent.action
         if (action == TelephonyManager.ACTION_PHONE_STATE_CHANGED) {
             val estado = intent.getStringExtra(TelephonyManager.EXTRA_STATE)

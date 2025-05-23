@@ -31,7 +31,7 @@
             </intent-filter>
         </activity>
 
-        <!-- Receptor de llamadas -->
+        <!--Receptor de llamadas-->
         <receiver
             android:name=".CallReceiver"
             android:enabled="true"
