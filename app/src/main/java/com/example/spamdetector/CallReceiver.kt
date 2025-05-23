@@ -28,7 +28,7 @@ class CallReceiver : BroadcastReceiver() {
                 val builder = NotificationCompat.Builder(context, "canal_llamada")
                     .setSmallIcon(android.R.drawable.sym_call_incoming)
                     .setContentTitle("📞 Llamada entrante")
-                    .setContentText("Tu app ha detectado una llamada.")
+                    .setContentText("SpamDetector esta detectando una llamada.")
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setAutoCancel(true)
 
