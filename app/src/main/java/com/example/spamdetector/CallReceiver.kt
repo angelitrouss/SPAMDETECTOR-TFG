@@ -1,4 +1,4 @@
-package com.ejemplo.spamdetector
+package com.example.spamdetector
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -12,41 +12,39 @@ import androidx.core.app.NotificationManagerCompat
 
 class CallReceiver : BroadcastReceiver() {
 
-    @Suppress("DEPRECATION")
     override fun onReceive(context: Context, intent: Intent) {
         val estado = intent.getStringExtra(TelephonyManager.EXTRA_STATE)
 
         if (estado == TelephonyManager.EXTRA_STATE_RINGING) {
-            // Intentar obtener el número
-            val numero = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER)
+            crearCanalDeNotificacion(context)
 
-            // Crear canal de notificación
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val canal = NotificationChannel(
-                    "canal_llamada",
-                    "Llamadas entrantes",
-                    NotificationManager.IMPORTANCE_HIGH
-                )
-                val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                manager.createNotificationChannel(canal)
-            }
-
-            // Definir el mensaje
-            val mensaje = if (!numero.isNullOrEmpty()) {
-                "📞 Llamada de: $numero"
-            } else {
-                "📞 Llamada entrante detectada"
-            }
-
-            // Crear notificación
             val builder = NotificationCompat.Builder(context, "canal_llamada")
                 .setSmallIcon(android.R.drawable.sym_call_incoming)
-                .setContentTitle("Llamada entrante")
-                .setContentText(mensaje)
+                .setContentTitle("📞 Llamada entrante")
+                .setContentText("Tu app ha detectado una llamada.")
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true)
 
-            NotificationManagerCompat.from(context).notify(1001, builder.build())
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+
+                NotificationManagerCompat.from(context).notify(1001, builder.build())
+            }
+        }
+    }
+
+    private fun crearCanalDeNotificacion(context: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val canal = NotificationChannel(
+                "canal_llamada",
+                "Llamadas entrantes",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Notificación para llamadas detectadas"
+            }
+
+            val manager = context.getSystemService(NotificationManager::class.java)
+            manager?.createNotificationChannel(canal)
         }
     }
 }
