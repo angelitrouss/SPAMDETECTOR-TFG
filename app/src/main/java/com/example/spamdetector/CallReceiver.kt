@@ -9,15 +9,14 @@ import android.widget.Toast
 class CallReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val estado = intent.getStringExtra(TelephonyManager.EXTRA_STATE)
-        if (estado == TelephonyManager.EXTRA_STATE_RINGING) {
-            val numeroEntrante = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER)
-            val mensaje = if (!numeroEntrante.isNullOrEmpty()) {
-                "📞 Llamada entrante de: $numeroEntrante"
-            } else {
-                "📞 Llamada entrante detectada"
-            }
 
-            Toast.makeText(context, mensaje, Toast.LENGTH_LONG).show()
+        if (estado == TelephonyManager.EXTRA_STATE_RINGING) {
+            // Mostramos un mensaje básico sin intentar acceder al número
+            Toast.makeText(
+                context,
+                "📞 Llamada entrante detectada",
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 }
