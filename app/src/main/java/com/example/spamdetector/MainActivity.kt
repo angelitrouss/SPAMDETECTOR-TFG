@@ -52,5 +52,5 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun TextoInicio() {
-    Text(text = "App iniciada. Esperando llamadas 📞")
+    Text(text = "App en funcionamiento. Esperando llamadas telefónicas 📞")
 }
