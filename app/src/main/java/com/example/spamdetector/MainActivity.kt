@@ -13,6 +13,8 @@ import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import com.example.spamdetector.PantallaPrincipal
 
+
+
 class MainActivity : ComponentActivity() {
 
     // Variables de estado que se actualizan automáticamente
