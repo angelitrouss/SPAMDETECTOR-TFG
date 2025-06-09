@@ -10,6 +10,9 @@ import android.telephony.TelephonyManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -25,33 +28,47 @@ class CallReceiver : BroadcastReceiver() {
 
             if (estado == TelephonyManager.EXTRA_STATE_RINGING) {
                 val numero = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER)
-                val fechaHora = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault())
-                    .format(Date())
+                val fechaHora = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(Date())
 
-                // Guardar la última llamada detectada
-                UltimaLlamada.llamada = Llamada(numero = numero, fechaHora = fechaHora)
+                CoroutineScope(Dispatchers.IO).launch {
+                    val esSpam = numero?.let { SpamChecker.esSpam(it) } ?: false
 
-                crearCanalDeNotificacion(context)
+                    // Guardar la última llamada detectada
+                    UltimaLlamada.llamada = Llamada(
+                        numero = numero,
+                        fechaHora = fechaHora,
+                        esSpam = esSpam
+                    )
 
-                val builder = NotificationCompat.Builder(context, "canal_llamada")
-                    .setSmallIcon(android.R.drawable.sym_call_incoming)
-                    .setContentTitle("📞 Llamada entrante")
-                    .setContentText("SpamDetector está detectando una llamada.")
-                    .setPriority(NotificationCompat.PRIORITY_HIGH)
-                    .setAutoCancel(true)
-
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-                    context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) ==
-                    android.content.pm.PackageManager.PERMISSION_GRANTED) {
-
-                    NotificationManagerCompat.from(context).notify(1001, builder.build())
-                    Log.d("CALL_RECEIVER", "Notificación mostrada")
-                } else {
-                    Log.d("CALL_RECEIVER", "Permiso POST_NOTIFICATIONS no concedido")
+                    mostrarNotificacion(context, numero ?: "Desconocido", esSpam)
                 }
             }
         } else {
             Log.d("CALL_RECEIVER", "Intent no relacionado con PHONE_STATE")
+        }
+    }
+
+    private fun mostrarNotificacion(context: Context, numero: String, esSpam: Boolean) {
+        crearCanalDeNotificacion(context)
+
+        val titulo = if (esSpam) "⚠️ Sospechoso de SPAM" else "📞 Llamada entrante"
+        val mensaje = if (esSpam) "Número sospechoso: $numero" else "Llamada de: $numero"
+
+        val builder = NotificationCompat.Builder(context, "canal_llamada")
+            .setSmallIcon(android.R.drawable.sym_call_incoming)
+            .setContentTitle(titulo)
+            .setContentText(mensaje)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+            == android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            NotificationManagerCompat.from(context).notify(1001, builder.build())
+            Log.d("CALL_RECEIVER", "Notificación mostrada")
+        } else {
+            Log.d("CALL_RECEIVER", "Permiso POST_NOTIFICATIONS no concedido")
         }
     }
 

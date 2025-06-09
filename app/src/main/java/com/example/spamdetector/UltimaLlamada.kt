@@ -6,7 +6,8 @@ import androidx.compose.runtime.setValue
 
 data class Llamada(
     val numero: String?,
-    val fechaHora: String
+    val fechaHora: String,
+    val esSpam: Boolean = false // 🔍 Nuevo campo para marcar llamadas como spam
 )
 
 object UltimaLlamada {

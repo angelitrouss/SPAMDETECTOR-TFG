@@ -6,7 +6,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -52,8 +51,11 @@ fun PantallaPrincipal(
                 Text("📲 Última llamada detectada", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 if (ultimaLlamada != null) {
                     val numero = ultimaLlamada.numero ?: "Desconocido"
-                    Text("• $numero", fontSize = 14.sp)
+                    val textoSpam = if (ultimaLlamada.esSpam) "⚠️ SPAM SOSPECHOSO" else "✅ No es spam"
+
+                    Text("• Número: $numero", fontSize = 14.sp)
                     Text("🕒 ${ultimaLlamada.fechaHora}", fontSize = 13.sp, color = Color.DarkGray)
+                    Text(textoSpam, fontWeight = FontWeight.SemiBold, color = if (ultimaLlamada.esSpam) Color.Red else Color(0xFF4CAF50))
                 } else {
                     Text("Aún no hay llamadas registradas", color = Color.DarkGray)
                 }
