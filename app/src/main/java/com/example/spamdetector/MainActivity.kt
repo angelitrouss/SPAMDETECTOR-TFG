@@ -6,27 +6,40 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
-import com.example.spamdetector.PantallaPrincipal
-
-
 
 class MainActivity : ComponentActivity() {
 
-    // Variables de estado que se actualizan automáticamente
     private val permisoTelefono = mutableStateOf(false)
     private val permisoNotificaciones = mutableStateOf(false)
+
+    private lateinit var solicitarPermisosLauncher: ActivityResultLauncher<Array<String>>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Actualiza el estado de los permisos al arrancar
+        // Registrar launcher
+        solicitarPermisosLauncher = registerForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions()
+        ) { resultado ->
+            permisoTelefono.value =
+                resultado[Manifest.permission.READ_PHONE_STATE] == true
+
+            permisoNotificaciones.value =
+                Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                        resultado[Manifest.permission.POST_NOTIFICATIONS] == true
+        }
+
+        // Actualizar estado
         actualizarEstadosDePermisos()
 
+        // Cargar historial persistente
+        HistorialLlamadas.cargarHistorial(this)
+
+        // Mostrar UI
         setContent {
             PantallaPrincipal(
                 permisoTelefono = permisoTelefono,
@@ -34,27 +47,19 @@ class MainActivity : ComponentActivity() {
                 onSolicitarPermisos = { solicitarPermisos() }
             )
         }
+
+        // Solicitar permisos al iniciar si faltan
+        if (!permisoTelefono.value || !permisoNotificaciones.value) {
+            solicitarPermisos()
+        }
     }
 
     private fun solicitarPermisos() {
-        val launcher = registerForActivityResult(
-            ActivityResultContracts.RequestMultiplePermissions()
-        ) { permisosResultado ->
-            permisoTelefono.value =
-                permisosResultado[Manifest.permission.READ_PHONE_STATE] == true
-
-            permisoNotificaciones.value =
-                Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-                        permisosResultado[Manifest.permission.POST_NOTIFICATIONS] == true
-        }
-
         val permisos = mutableListOf(Manifest.permission.READ_PHONE_STATE)
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permisos.add(Manifest.permission.POST_NOTIFICATIONS)
         }
-
-        launcher.launch(permisos.toTypedArray())
+        solicitarPermisosLauncher.launch(permisos.toTypedArray())
     }
 
     private fun actualizarEstadosDePermisos() {

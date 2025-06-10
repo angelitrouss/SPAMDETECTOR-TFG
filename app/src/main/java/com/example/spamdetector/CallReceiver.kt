@@ -33,12 +33,14 @@ class CallReceiver : BroadcastReceiver() {
                 CoroutineScope(Dispatchers.IO).launch {
                     val esSpam = numero?.let { SpamChecker.esSpam(it) } ?: false
 
-                    // Guardar la última llamada detectada
-                    UltimaLlamada.llamada = Llamada(
+                    val llamada = Llamada(
                         numero = numero,
                         fechaHora = fechaHora,
                         esSpam = esSpam
                     )
+
+                    UltimaLlamada.llamada = llamada
+                    HistorialLlamadas.agregarLlamada(context, llamada)
 
                     mostrarNotificacion(context, numero ?: "Desconocido", esSpam)
                 }

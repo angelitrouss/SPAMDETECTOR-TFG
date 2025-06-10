@@ -2,12 +2,21 @@ package com.example.spamdetector
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -20,86 +29,145 @@ fun PantallaPrincipal(
     onSolicitarPermisos: () -> Unit
 ) {
     val ultimaLlamada = UltimaLlamada.llamada
+    val historial = HistorialLlamadas.obtenerHistorial()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        // ENCABEZADO
         Text(
             text = "📞 SpamDetector",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.primary
         )
 
-        // TARJETAS DE PERMISOS
-        PermisoCard("📱 Permiso Teléfono", permisoTelefono.value)
-        PermisoCard("🔔 Permiso Notificaciones", permisoNotificacion.value)
-
-        // SECCIÓN DE ÚLTIMA LLAMADA
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .background(Color(0xFFE0F7FA), RoundedCornerShape(12.dp))
-                .padding(16.dp)
+        // Estado de permisos
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column {
-                Text("📲 Última llamada detectada", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            PermisoChip("Teléfono", permisoTelefono.value, Icons.Default.Phone)
+            PermisoChip("Notificación", permisoNotificacion.value, Icons.Default.Notifications)
+        }
+
+        // Última llamada
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFEBF5FB))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("📲 Última llamada", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 if (ultimaLlamada != null) {
                     val numero = ultimaLlamada.numero ?: "Desconocido"
                     val textoSpam = if (ultimaLlamada.esSpam) "⚠️ SPAM SOSPECHOSO" else "✅ No es spam"
 
                     Text("• Número: $numero", fontSize = 14.sp)
                     Text("🕒 ${ultimaLlamada.fechaHora}", fontSize = 13.sp, color = Color.DarkGray)
-                    Text(textoSpam, fontWeight = FontWeight.SemiBold, color = if (ultimaLlamada.esSpam) Color.Red else Color(0xFF4CAF50))
+                    Text(
+                        textoSpam,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (ultimaLlamada.esSpam) Color.Red else Color(0xFF4CAF50)
+                    )
                 } else {
                     Text("Aún no hay llamadas registradas", color = Color.DarkGray)
                 }
             }
         }
 
-        // BOTÓN DE PERMISOS
+        // Botón de permisos
         Button(
             onClick = { onSolicitarPermisos() },
-            modifier = Modifier.fillMaxWidth(0.9f)
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(10.dp)
         ) {
-            Text("Solicitar permisos manualmente")
+            Text("Solicitar permisos")
         }
 
-        // SECCIÓN DE HISTORIAL (placeholder)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .background(Color(0xFFF3E5F5), RoundedCornerShape(12.dp))
-                .padding(16.dp)
-        ) {
-            Column {
-                Text("📜 Historial de llamadas (próximamente)", fontWeight = FontWeight.Bold)
-                Text("Aquí aparecerá la lista con duración y estado", color = Color.DarkGray)
+        // Historial
+        Text(
+            "📜 Historial de llamadas",
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+
+        if (historial.isEmpty()) {
+            Text("Aún no hay historial disponible", color = Color.Gray)
+        } else {
+            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                items(historial) { llamada ->
+                    LlamadaItem(llamada)
+                }
             }
         }
     }
 }
 
 @Composable
-fun PermisoCard(titulo: String, concedido: Boolean) {
-    val colorFondo = if (concedido) Color(0xFFDFF0D8) else Color(0xFFF2DEDE)
-    val colorTexto = if (concedido) Color(0xFF3C763D) else Color(0xFFA94442)
-    val estadoTexto = if (concedido) "Concedido ✅" else "No concedido ❌"
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth(0.9f)
-            .background(colorFondo, shape = RoundedCornerShape(12.dp))
-            .padding(16.dp)
+fun PermisoChip(nombre: String, concedido: Boolean, icono: androidx.compose.ui.graphics.vector.ImageVector) {
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = if (concedido) Color(0xFFDEFDE0) else Color(0xFFFFE0E0),
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Column {
-            Text(titulo, fontWeight = FontWeight.Bold, color = colorTexto)
-            Text(estadoTexto, color = colorTexto)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(8.dp)
+        ) {
+            Icon(icono, contentDescription = null, tint = if (concedido) Color(0xFF2E7D32) else Color(0xFFC62828))
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = if (concedido) "$nombre ✅" else "$nombre ❌",
+                color = if (concedido) Color(0xFF2E7D32) else Color(0xFFC62828),
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+}
+
+@Composable
+fun LlamadaItem(llamada: Llamada) {
+    val iconColor = if (llamada.esSpam) Color.Red else Color(0xFF4CAF50)
+    val icon = if (llamada.esSpam) Icons.Default.Warning else Icons.Default.Call
+
+    Card(
+        shape = RoundedCornerShape(10.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(iconColor),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = Color.White
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column {
+                val numero = llamada.numero ?: "Desconocido"
+                val estado = if (llamada.esSpam) "SPAM" else "Normal"
+
+                Text(numero, fontWeight = FontWeight.SemiBold)
+                Text("${llamada.fechaHora} — $estado", fontSize = 12.sp, color = Color.DarkGray)
+            }
         }
     }
 }
