@@ -11,7 +11,7 @@ object SpamChecker {
     suspend fun esSpam(numero: String): Boolean {
         return withContext(Dispatchers.IO) {
             try {
-                val url = URL("http://192.168.1.15:8000/es_spam/$numero")  // Cambia si usas IP distinta
+                val url = URL("https://spam-backend-siqx.onrender.com/es_spam/$numero")  // Cambia si usas IP distinta
                 val conn = url.openConnection() as HttpURLConnection
                 conn.requestMethod = "GET"
                 conn.connectTimeout = 3000
