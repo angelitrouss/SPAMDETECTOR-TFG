@@ -50,7 +50,7 @@ fun PantallaPrincipal(
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
         Text(
-            text = "📞 SpamDetector",
+            text = "\uD83D\uDCDE SpamDetector",
             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.primary
         )
@@ -69,13 +69,13 @@ fun PantallaPrincipal(
             colors = CardDefaults.cardColors(containerColor = Color(0xFFEBF5FB))
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("📲 Última llamada", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text("\uD83D\uDCF2 Última llamada", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 if (ultimaLlamada != null) {
                     val numero = ultimaLlamada.numero ?: "Desconocido"
-                    val textoSpam = if (ultimaLlamada.esSpam) "⚠️ SPAM SOSPECHOSO" else "✅ No es spam"
+                    val textoSpam = if (ultimaLlamada.esSpam) "\u26A0\uFE0F SPAM SOSPECHOSO" else "\u2705 No es spam"
 
                     Text("• Número: $numero", fontSize = 14.sp)
-                    Text("🕒 ${ultimaLlamada.fechaHora}", fontSize = 13.sp, color = Color.DarkGray)
+                    Text("\uD83D\uDD52 ${ultimaLlamada.fechaHora}", fontSize = 13.sp, color = Color.DarkGray)
                     Text(
                         textoSpam,
                         fontWeight = FontWeight.SemiBold,
@@ -100,6 +100,23 @@ fun PantallaPrincipal(
                         ) {
                             Text("Marcar como SPAM")
                         }
+                    } else if (yaMarcadoComoSpam || ultimaLlamada.esSpam) {
+                        Button(
+                            onClick = {
+                                MarcadorDeSpam.eliminarDeSpam(numero) { exito ->
+                                    if (exito) {
+                                        mensajeExito = "Número $numero eliminado de la lista de SPAM"
+                                        yaMarcadoComoSpam = false
+                                    } else {
+                                        mensajeExito = "Error al eliminar de SPAM"
+                                    }
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text("Quitar de SPAM")
+                        }
                     }
 
                     mensajeExito?.let {
@@ -121,7 +138,7 @@ fun PantallaPrincipal(
         }
 
         Text(
-            "📜 Historial de llamadas",
+            "\uD83D\uDCDC Historial de llamadas",
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp,
             modifier = Modifier.padding(top = 8.dp)
@@ -205,7 +222,7 @@ fun LlamadaItem(llamada: Llamada) {
                             .padding(horizontal = 10.dp, vertical = 4.dp)
                     ) {
                         Text(
-                            text = "⚠️ SPAM SOSPECHOSO",
+                            text = "\u26A0\uFE0F SPAM SOSPECHOSO",
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp
