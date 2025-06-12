@@ -1,5 +1,6 @@
 package com.example.spamdetector
 
+import android.app.PendingIntent
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.BroadcastReceiver
@@ -30,7 +31,8 @@ class CallReceiver : BroadcastReceiver() {
 
                 Log.d("CALL_RECEIVER", "Número detectado: $numeroFormateado")
 
-                // Siempre se ejecuta, aunque el número sea null
+                abrirApp(context) // 👈 Abrir la app al recibir llamada
+
                 SpamChecker.esSpam(numeroFormateado) { esSpam ->
                     Log.d("CALL_RECEIVER", "Resultado spam para $numeroFormateado: $esSpam")
 
@@ -56,23 +58,39 @@ class CallReceiver : BroadcastReceiver() {
         val titulo = if (esSpam) "⚠️ Sospechoso de SPAM" else "📞 Llamada entrante"
         val mensaje = if (esSpam) "Número sospechoso: $numero" else "Llamada de: $numero"
 
+        // Intent para abrir la app al tocar la notificación
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context, 0, intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
         val builder = NotificationCompat.Builder(context, "canal_llamada")
             .setSmallIcon(android.R.drawable.sym_call_incoming)
             .setContentTitle(titulo)
             .setContentText(mensaje)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
+            .setContentIntent(pendingIntent) // 👈 Al tocar, se abre la app
+            .addAction(
+                android.R.drawable.ic_menu_view,
+                "Abrir SpamDetector",
+                pendingIntent
+            )
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
             context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
             == android.content.pm.PackageManager.PERMISSION_GRANTED
         ) {
             NotificationManagerCompat.from(context).notify(1001, builder.build())
-            Log.d("CALL_RECEIVER", "Notificación mostrada")
+            Log.d("CALL_RECEIVER", "Notificación mostrada con acceso a la app")
         } else {
             Log.d("CALL_RECEIVER", "Permiso POST_NOTIFICATIONS no concedido")
         }
     }
+
 
     private fun crearCanalDeNotificacion(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -87,5 +105,13 @@ class CallReceiver : BroadcastReceiver() {
             val manager = context.getSystemService(NotificationManager::class.java)
             manager?.createNotificationChannel(canal)
         }
+    }
+
+    private fun abrirApp(context: Context) {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        }
+        context.startActivity(intent)
+        Log.d("CALL_RECEIVER", "App lanzada desde llamada entrante")
     }
 }
