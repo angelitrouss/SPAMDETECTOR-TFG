@@ -1,6 +1,7 @@
 package com.example.spamdetector
 
 import android.content.Context
+import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
@@ -15,6 +16,7 @@ object HistorialLlamadas {
             historial.removeAt(historial.lastIndex)
         }
         guardarHistorial(context)
+        Log.d("HISTORIAL", "Llamada agregada: $llamada")
     }
 
     fun obtenerHistorial(): List<Llamada> {
@@ -29,6 +31,9 @@ object HistorialLlamadas {
             val lista = Gson().fromJson<List<Llamada>>(json, tipoLista)
             historial.clear()
             historial.addAll(lista)
+            Log.d("HISTORIAL", "Historial cargado: ${historial.size} llamadas")
+        } else {
+            Log.d("HISTORIAL", "Historial vacío")
         }
     }
 
@@ -38,5 +43,6 @@ object HistorialLlamadas {
         val json = Gson().toJson(historial)
         editor.putString(CLAVE_HISTORIAL, json)
         editor.apply()
+        Log.d("HISTORIAL", "Historial guardado (${historial.size}) llamadas")
     }
 }

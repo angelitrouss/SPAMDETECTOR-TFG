@@ -1,6 +1,5 @@
 package com.example.spamdetector
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,8 +21,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 @Composable
 fun PantallaPrincipal(
@@ -34,12 +31,10 @@ fun PantallaPrincipal(
     val ultimaLlamada = UltimaLlamada.llamada
     val historial = HistorialLlamadas.obtenerHistorial()
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
 
     var mensajeExito by remember { mutableStateOf<String?>(null) }
     var yaMarcadoComoSpam by remember { mutableStateOf(false) }
 
-    // Si hay llamada, consultamos si ya fue marcada como spam
     LaunchedEffect(ultimaLlamada?.numero) {
         ultimaLlamada?.numero?.let { numero ->
             SpamChecker.esSpam(numero) { esSpam ->
@@ -89,8 +84,7 @@ fun PantallaPrincipal(
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    // Botón solo si aún no está marcado
-                    if (!yaMarcadoComoSpam) {
+                    if (!yaMarcadoComoSpam && !ultimaLlamada.esSpam) {
                         Button(
                             onClick = {
                                 MarcadorDeSpam.marcarComoSpam(numero) { exito ->
@@ -112,7 +106,6 @@ fun PantallaPrincipal(
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(it, fontSize = 12.sp, color = Color.DarkGray)
                     }
-
                 } else {
                     Text("Aún no hay llamadas registradas", color = Color.DarkGray)
                 }
@@ -182,7 +175,6 @@ fun LlamadaItem(llamada: Llamada) {
         colors = CardDefaults.cardColors(
             containerColor = if (llamada.esSpam) Color(0xFFFFEBEE) else Color.White
         )
-
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -195,11 +187,7 @@ fun LlamadaItem(llamada: Llamada) {
                     .background(iconColor),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    icon,
-                    contentDescription = null,
-                    tint = Color.White
-                )
+                Icon(icon, contentDescription = null, tint = Color.White)
             }
 
             Spacer(modifier = Modifier.width(12.dp))

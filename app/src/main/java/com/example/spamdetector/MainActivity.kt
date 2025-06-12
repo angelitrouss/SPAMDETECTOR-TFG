@@ -21,6 +21,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Registrar launcher para solicitar múltiples permisos
         solicitarPermisosLauncher = registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions()
         ) { resultado ->
@@ -32,9 +33,13 @@ class MainActivity : ComponentActivity() {
                         resultado[Manifest.permission.POST_NOTIFICATIONS] == true
         }
 
+        // Cargar historial antes de mostrar la interfaz
         HistorialLlamadas.cargarHistorial(this)
+
+        // Revisar permisos actuales
         actualizarEstadosDePermisos()
 
+        // Mostrar interfaz principal
         setContent {
             PantallaPrincipal(
                 permisoTelefono = permisoTelefono,
@@ -43,6 +48,7 @@ class MainActivity : ComponentActivity() {
             )
         }
 
+        // Pedir permisos si faltan
         if (!permisoTelefono.value || !permisoNotificaciones.value) {
             solicitarPermisos()
         }

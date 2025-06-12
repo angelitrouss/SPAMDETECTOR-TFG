@@ -25,25 +25,24 @@ class CallReceiver : BroadcastReceiver() {
 
             if (estado == TelephonyManager.EXTRA_STATE_RINGING) {
                 val numero = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER)
+                val numeroFormateado = numero ?: "Desconocido"
                 val fechaHora = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(Date())
 
-                if (numero != null) {
-                    SpamChecker.esSpam(numero) { esSpam ->
-                        Log.d("CALL_RECEIVER", "Resultado spam para $numero: $esSpam")
+                Log.d("CALL_RECEIVER", "Número detectado: $numeroFormateado")
 
-                        val llamada = Llamada(
-                            numero = numero,
-                            fechaHora = fechaHora,
-                            esSpam = esSpam
-                        )
+                // Siempre se ejecuta, aunque el número sea null
+                SpamChecker.esSpam(numeroFormateado) { esSpam ->
+                    Log.d("CALL_RECEIVER", "Resultado spam para $numeroFormateado: $esSpam")
 
-                        UltimaLlamada.llamada = llamada
-                        HistorialLlamadas.agregarLlamada(context, llamada)
+                    val llamada = Llamada(
+                        numero = numeroFormateado,
+                        fechaHora = fechaHora,
+                        esSpam = esSpam
+                    )
 
-                        mostrarNotificacion(context, numero, esSpam)
-                    }
-                } else {
-                    Log.w("CALL_RECEIVER", "Número desconocido o nulo")
+                    UltimaLlamada.llamada = llamada
+                    HistorialLlamadas.agregarLlamada(context, llamada)
+                    mostrarNotificacion(context, numeroFormateado, esSpam)
                 }
             }
         } else {
