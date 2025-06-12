@@ -28,16 +28,25 @@ class CallReceiver : BroadcastReceiver() {
 
             if (estado == TelephonyManager.EXTRA_STATE_RINGING) {
                 val numero = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER)
+                Log.d("CALL_RECEIVER", "Número entrante: $numero")
+
                 val fechaHora = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(Date())
 
                 CoroutineScope(Dispatchers.IO).launch {
-                    val esSpam = numero?.let { SpamChecker.esSpam(it) } ?: false
+                    val esSpam = numero?.let {
+                        Log.d("CALL_RECEIVER", "Consultando backend para número: $it")
+                        val resultado = SpamChecker.esSpam(it)
+                        Log.d("CALL_RECEIVER", "¿Es spam? => $resultado")
+                        resultado
+                    } ?: false
 
                     val llamada = Llamada(
                         numero = numero,
                         fechaHora = fechaHora,
                         esSpam = esSpam
                     )
+
+                    Log.d("CALL_RECEIVER", "Llamada registrada: $llamada")
 
                     UltimaLlamada.llamada = llamada
                     HistorialLlamadas.agregarLlamada(context, llamada)
