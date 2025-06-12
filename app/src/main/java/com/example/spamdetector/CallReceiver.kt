@@ -10,9 +10,6 @@ import android.telephony.TelephonyManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -30,19 +27,25 @@ class CallReceiver : BroadcastReceiver() {
                 val numero = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER)
                 val fechaHora = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(Date())
 
-                CoroutineScope(Dispatchers.IO).launch {
-                    val esSpam = numero?.let { SpamChecker.esSpam(it) } ?: false
+                if (numero != null) {
+                    SpamChecker.esSpam(numero) { esSpam ->
+                        Log.d("CALL_RECEIVER", "Resultado spam para $numero: $esSpam")
 
-                    val llamada = Llamada(
-                        numero = numero,
-                        fechaHora = fechaHora,
-                        esSpam = esSpam
-                    )
+                        val llamada = Llamada(
+                            numero = numero,
+                            fechaHora = fechaHora,
+                            esSpam = esSpam
+                        )
 
-                    UltimaLlamada.llamada = llamada
-                    HistorialLlamadas.agregarLlamada(context, llamada)
+                        // Actualizar última llamada y guardar en historial
+                        UltimaLlamada.llamada = llamada
+                        HistorialLlamadas.agregarLlamada(context, llamada)
 
-                    mostrarNotificacion(context, numero ?: "Desconocido", esSpam)
+                        // Mostrar notificación
+                        mostrarNotificacion(context, numero, esSpam)
+                    }
+                } else {
+                    Log.w("CALL_RECEIVER", "Número desconocido o nulo")
                 }
             }
         } else {

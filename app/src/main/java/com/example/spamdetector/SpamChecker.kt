@@ -1,33 +1,25 @@
 package com.example.spamdetector
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import org.json.JSONObject
-import java.net.HttpURLConnection
-import java.net.URL
+import com.google.firebase.firestore.FirebaseFirestore
 
 object SpamChecker {
 
-    suspend fun esSpam(numero: String): Boolean {
-        return withContext(Dispatchers.IO) {
-            try {
-                val url = URL("http://192.168.1.15:8000/es_spam/$numero")  // Cambia si usas IP distinta
-                val conn = url.openConnection() as HttpURLConnection
-                conn.requestMethod = "GET"
-                conn.connectTimeout = 3000
-                conn.readTimeout = 3000
+    private val db = FirebaseFirestore.getInstance()
 
-                if (conn.responseCode == 200) {
-                    val response = conn.inputStream.bufferedReader().readText()
-                    val json = JSONObject(response)
-                    return@withContext json.optBoolean("es_spam", false)
-                } else {
-                    return@withContext false
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                return@withContext false
+    /**
+     * Consulta Firestore para verificar si un número está registrado como spam.
+     * Llama al callback con true si es spam, false si no lo es o si hay error.
+     */
+    fun esSpam(numero: String, callback: (Boolean) -> Unit) {
+        db.collection("numerosSpam")
+            .whereEqualTo("numero", numero)
+            .get()
+            .addOnSuccessListener { documentos ->
+                callback(!documentos.isEmpty)
             }
-        }
+            .addOnFailureListener { error ->
+                error.printStackTrace()
+                callback(false) // En caso de error, tratamos como "no spam"
+            }
     }
 }

@@ -1,5 +1,6 @@
 package com.example.spamdetector
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,15 +13,17 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
 fun PantallaPrincipal(
@@ -30,6 +33,20 @@ fun PantallaPrincipal(
 ) {
     val ultimaLlamada = UltimaLlamada.llamada
     val historial = HistorialLlamadas.obtenerHistorial()
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
+    var mensajeExito by remember { mutableStateOf<String?>(null) }
+    var yaMarcadoComoSpam by remember { mutableStateOf(false) }
+
+    // Si hay llamada, consultamos si ya fue marcada como spam
+    LaunchedEffect(ultimaLlamada?.numero) {
+        ultimaLlamada?.numero?.let { numero ->
+            SpamChecker.esSpam(numero) { esSpam ->
+                yaMarcadoComoSpam = esSpam
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -43,7 +60,6 @@ fun PantallaPrincipal(
             color = MaterialTheme.colorScheme.primary
         )
 
-        // Estado de permisos
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxWidth()
@@ -52,7 +68,6 @@ fun PantallaPrincipal(
             PermisoChip("Notificación", permisoNotificacion.value, Icons.Default.Notifications)
         }
 
-        // Última llamada
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -71,13 +86,39 @@ fun PantallaPrincipal(
                         fontWeight = FontWeight.SemiBold,
                         color = if (ultimaLlamada.esSpam) Color.Red else Color(0xFF4CAF50)
                     )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Botón solo si aún no está marcado
+                    if (!yaMarcadoComoSpam) {
+                        Button(
+                            onClick = {
+                                MarcadorDeSpam.marcarComoSpam(numero) { exito ->
+                                    if (exito) {
+                                        mensajeExito = "Número $numero marcado como SPAM"
+                                        yaMarcadoComoSpam = true
+                                    } else {
+                                        mensajeExito = "Error al marcar como SPAM"
+                                    }
+                                }
+                            },
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text("Marcar como SPAM")
+                        }
+                    }
+
+                    mensajeExito?.let {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(it, fontSize = 12.sp, color = Color.DarkGray)
+                    }
+
                 } else {
                     Text("Aún no hay llamadas registradas", color = Color.DarkGray)
                 }
             }
         }
 
-        // Botón de permisos
         Button(
             onClick = { onSolicitarPermisos() },
             modifier = Modifier.fillMaxWidth(),
@@ -86,7 +127,6 @@ fun PantallaPrincipal(
             Text("Solicitar permisos")
         }
 
-        // Historial
         Text(
             "📜 Historial de llamadas",
             fontWeight = FontWeight.Bold,
@@ -139,7 +179,10 @@ fun LlamadaItem(llamada: Llamada) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(
+            containerColor = if (llamada.esSpam) Color(0xFFFFEBEE) else Color.White
+        )
+
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
