@@ -37,11 +37,9 @@ class CallReceiver : BroadcastReceiver() {
                             esSpam = esSpam
                         )
 
-                        // Actualizar última llamada y guardar en historial
                         UltimaLlamada.llamada = llamada
                         HistorialLlamadas.agregarLlamada(context, llamada)
 
-                        // Mostrar notificación
                         mostrarNotificacion(context, numero, esSpam)
                     }
                 } else {

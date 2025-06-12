@@ -6,10 +6,6 @@ object SpamChecker {
 
     private val db = FirebaseFirestore.getInstance()
 
-    /**
-     * Consulta Firestore para verificar si un número está registrado como spam.
-     * Llama al callback con true si es spam, false si no lo es o si hay error.
-     */
     fun esSpam(numero: String, callback: (Boolean) -> Unit) {
         db.collection("numerosSpam")
             .whereEqualTo("numero", numero)
@@ -19,7 +15,7 @@ object SpamChecker {
             }
             .addOnFailureListener { error ->
                 error.printStackTrace()
-                callback(false) // En caso de error, tratamos como "no spam"
+                callback(false)
             }
     }
 }
