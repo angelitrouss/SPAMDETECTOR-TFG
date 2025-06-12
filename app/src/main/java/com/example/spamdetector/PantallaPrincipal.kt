@@ -206,10 +206,24 @@ fun LlamadaItem(llamada: Llamada) {
 
             Column {
                 val numero = llamada.numero ?: "Desconocido"
-                val estado = if (llamada.esSpam) "SPAM" else "Normal"
-
                 Text(numero, fontWeight = FontWeight.SemiBold)
-                Text("${llamada.fechaHora} — $estado", fontSize = 12.sp, color = Color.DarkGray)
+                Text("${llamada.fechaHora}", fontSize = 12.sp, color = Color.DarkGray)
+
+                if (llamada.esSpam) {
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 4.dp)
+                            .background(Color.Red, RoundedCornerShape(6.dp))
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = "⚠️ SPAM SOSPECHOSO",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
             }
         }
     }
