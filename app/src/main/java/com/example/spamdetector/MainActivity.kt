@@ -31,9 +31,11 @@ class MainActivity : ComponentActivity() {
             permisoNotificaciones.value =
                 Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                         resultado[Manifest.permission.POST_NOTIFICATIONS] == true
+
+            // Puedes agregar un mensaje visual aquí si quieres notificar al usuario
         }
 
-        // Cargar historial antes de mostrar la interfaz
+        // Cargar historial antes de mostrar la interfaz (asegúrate de que esta función maneje permisos)
         HistorialLlamadas.cargarHistorial(this)
 
         // Revisar permisos actuales
@@ -48,7 +50,7 @@ class MainActivity : ComponentActivity() {
             )
         }
 
-        // Pedir permisos si faltan
+        // Pedir permisos si faltan (esto debería ir después de UI para evitar errores de timing)
         if (!permisoTelefono.value || !permisoNotificaciones.value) {
             solicitarPermisos()
         }
@@ -56,9 +58,11 @@ class MainActivity : ComponentActivity() {
 
     private fun solicitarPermisos() {
         val permisos = mutableListOf(Manifest.permission.READ_PHONE_STATE)
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permisos.add(Manifest.permission.POST_NOTIFICATIONS)
         }
+
         solicitarPermisosLauncher.launch(permisos.toTypedArray())
     }
 
