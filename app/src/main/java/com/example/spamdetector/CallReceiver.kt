@@ -33,6 +33,9 @@ class CallReceiver : BroadcastReceiver() {
 
                 abrirApp(context) // 👈 Abrir la app al recibir llamada
 
+                // Forzar recomposición en la UI reseteando la llamada anterior
+                UltimaLlamada.llamada = null
+
                 SpamChecker.esSpam(numeroFormateado) { esSpam ->
                     Log.d("CALL_RECEIVER", "Resultado spam para $numeroFormateado: $esSpam")
 
@@ -58,7 +61,6 @@ class CallReceiver : BroadcastReceiver() {
         val titulo = if (esSpam) "⚠️ Sospechoso de SPAM" else "📞 Llamada entrante"
         val mensaje = if (esSpam) "Número sospechoso: $numero" else "Llamada de: $numero"
 
-        // Intent para abrir la app al tocar la notificación
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
@@ -73,7 +75,7 @@ class CallReceiver : BroadcastReceiver() {
             .setContentText(mensaje)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
-            .setContentIntent(pendingIntent) // 👈 Al tocar, se abre la app
+            .setContentIntent(pendingIntent)
             .addAction(
                 android.R.drawable.ic_menu_view,
                 "Abrir SpamDetector",
@@ -90,7 +92,6 @@ class CallReceiver : BroadcastReceiver() {
             Log.d("CALL_RECEIVER", "Permiso POST_NOTIFICATIONS no concedido")
         }
     }
-
 
     private fun crearCanalDeNotificacion(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
