@@ -7,12 +7,13 @@ plugins {
 
 android {
     namespace = "com.example.spamdetector"
-    compileSdk = 35
+
+    compileSdk = 35 // 🛠 SDK más moderno para compilar
 
     defaultConfig {
         applicationId = "com.example.spamdetector"
         minSdk = 24 // Firebase Firestore requiere mínimo 21+
-        targetSdk = 35
+        targetSdk = 28 // ✅ Para permitir READ_CALL_LOG y ver números reales en Android 10 o inferior
         versionCode = 1
         versionName = "1.0"
 
@@ -51,7 +52,7 @@ dependencies {
     // ✅ FIREBASE (BOM + Firestore)
     implementation(platform("com.google.firebase:firebase-bom:32.7.3"))
     implementation("com.google.firebase:firebase-firestore-ktx")
-    implementation("com.google.firebase:firebase-analytics-ktx") // (opcional pero útil)
+    implementation("com.google.firebase:firebase-analytics-ktx") // Opcional pero útil
 
     // ✅ COROUTINAS Y JSON
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")

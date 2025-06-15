@@ -1,5 +1,6 @@
 package com.example.spamdetector
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -33,12 +34,18 @@ fun PantallaPrincipal(
     val context = LocalContext.current
 
     var mensajeExito by remember { mutableStateOf<String?>(null) }
-    var yaMarcadoComoSpam by remember { mutableStateOf(false) }
 
-    LaunchedEffect(ultimaLlamada?.numero) {
-        ultimaLlamada?.numero?.let { numero ->
-            SpamChecker.esSpam(numero) { esSpam ->
-                yaMarcadoComoSpam = esSpam
+    val numeroClave = ultimaLlamada?.numero
+
+    val (yaMarcadoComoSpam, setYaMarcadoComoSpam) = remember(numeroClave) {
+        mutableStateOf<Boolean?>(null)
+    }
+
+    LaunchedEffect(numeroClave) {
+        numeroClave?.let { numero ->
+            setYaMarcadoComoSpam(null)
+            SpamChecker.esSpam(numero.trim()) { esSpam ->
+                setYaMarcadoComoSpam(esSpam)
             }
         }
     }
@@ -63,70 +70,101 @@ fun PantallaPrincipal(
             PermisoChip("Notificación", permisoNotificacion.value, Icons.Default.Notifications)
         }
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFEBF5FB))
+        AnimatedVisibility(
+            visible = ultimaLlamada != null,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("\uD83D\uDCF2 Última llamada", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                if (ultimaLlamada != null) {
-                    val numero = ultimaLlamada.numero ?: "Desconocido"
-                    val textoSpam = if (ultimaLlamada.esSpam) "\u26A0\uFE0F SPAM SOSPECHOSO" else "\u2705 No es spam"
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFEBF5FB))
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("\uD83D\uDCF2 Última llamada", fontWeight = FontWeight.Bold, fontSize = 16.sp)
 
-                    Text("• Número: $numero", fontSize = 14.sp)
-                    Text("\uD83D\uDD52 ${ultimaLlamada.fechaHora}", fontSize = 13.sp, color = Color.DarkGray)
-                    Text(
-                        textoSpam,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (ultimaLlamada.esSpam) Color.Red else Color(0xFF4CAF50)
-                    )
+                    ultimaLlamada?.let { llamada ->
+                        val numero = llamada.numero ?: "Número oculto"
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                        Text("• Número: $numero", fontSize = 14.sp)
+                        Text("\uD83D\uDD52 ${llamada.fechaHora}", fontSize = 13.sp, color = Color.DarkGray)
 
-                    if (!yaMarcadoComoSpam && !ultimaLlamada.esSpam) {
-                        Button(
-                            onClick = {
-                                MarcadorDeSpam.marcarComoSpam(numero) { exito ->
-                                    if (exito) {
-                                        mensajeExito = "Número $numero marcado como SPAM"
-                                        yaMarcadoComoSpam = true
-                                    } else {
-                                        mensajeExito = "Error al marcar como SPAM"
-                                    }
-                                }
-                            },
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            Text("Marcar como SPAM")
+                        if (yaMarcadoComoSpam == null) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                CircularProgressIndicator(
+                                    strokeWidth = 2.dp,
+                                    modifier = Modifier.size(18.dp),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text("Verificando si es spam...", fontSize = 14.sp, color = Color.DarkGray)
+                            }
+                        } else {
+                            val textoSpam = if (yaMarcadoComoSpam == true || llamada.esSpam)
+                                "\u26A0\uFE0F SPAM SOSPECHOSO" else "\u2705 No es spam"
+
+                            Text(
+                                textoSpam,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (yaMarcadoComoSpam == true || llamada.esSpam)
+                                    Color.Red else Color(0xFF4CAF50)
+                            )
                         }
-                    } else if (yaMarcadoComoSpam || ultimaLlamada.esSpam) {
-                        Button(
-                            onClick = {
-                                MarcadorDeSpam.eliminarDeSpam(numero) { exito ->
-                                    if (exito) {
-                                        mensajeExito = "Número $numero eliminado de la lista de SPAM"
-                                        yaMarcadoComoSpam = false
-                                    } else {
-                                        mensajeExito = "Error al eliminar de SPAM"
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        if (yaMarcadoComoSpam == false && !llamada.esSpam) {
+                            Button(
+                                onClick = {
+                                    MarcadorDeSpam.marcarComoSpam(numero) { exito ->
+                                        if (exito) {
+                                            mensajeExito = "Número $numero marcado como SPAM"
+                                            SpamChecker.esSpam(numero.trim()) { esSpam ->
+                                                setYaMarcadoComoSpam(esSpam)
+                                            }
+                                        } else {
+                                            mensajeExito = "Error al marcar como SPAM"
+                                        }
                                     }
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            Text("Quitar de SPAM")
+                                },
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Text("Marcar como SPAM")
+                            }
+                        } else if (yaMarcadoComoSpam == true || llamada.esSpam) {
+                            Button(
+                                onClick = {
+                                    MarcadorDeSpam.eliminarDeSpam(numero) { exito ->
+                                        if (exito) {
+                                            mensajeExito = "Número $numero eliminado de la lista de SPAM"
+                                            SpamChecker.esSpam(numero.trim()) { esSpam ->
+                                                setYaMarcadoComoSpam(esSpam)
+                                            }
+                                        } else {
+                                            mensajeExito = "Error al eliminar de SPAM"
+                                        }
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Text("Quitar de SPAM")
+                            }
+                        }
+
+                        mensajeExito?.let {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(it, fontSize = 12.sp, color = Color.DarkGray)
                         }
                     }
-
-                    mensajeExito?.let {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(it, fontSize = 12.sp, color = Color.DarkGray)
-                    }
-                } else {
-                    Text("Aún no hay llamadas registradas", color = Color.DarkGray)
                 }
             }
+        }
+
+        if (ultimaLlamada == null) {
+            Text("📭 Esperando nueva llamada...", color = Color.Gray, fontSize = 14.sp)
         }
 
         Button(
@@ -149,7 +187,56 @@ fun PantallaPrincipal(
         } else {
             LazyColumn(modifier = Modifier.fillMaxWidth()) {
                 items(historial) { llamada ->
-                    LlamadaItem(llamada)
+                    val iconColor = if (llamada.esSpam) Color.Red else Color(0xFF4CAF50)
+                    val icon = if (llamada.esSpam) Icons.Default.Warning else Icons.Default.Call
+                    val fondo = if (llamada.esSpam) Color(0xFFFFEBEE) else Color.White
+
+                    Card(
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        colors = CardDefaults.cardColors(containerColor = fondo)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(iconColor),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(icon, contentDescription = null, tint = Color.White)
+                            }
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Column {
+                                val numero = llamada.numero ?: "Número oculto"
+                                Text(numero, fontWeight = FontWeight.SemiBold)
+                                Text(llamada.fechaHora, fontSize = 12.sp, color = Color.DarkGray)
+
+                                if (llamada.esSpam) {
+                                    Box(
+                                        modifier = Modifier
+                                            .padding(top = 4.dp)
+                                            .background(Color.Red, RoundedCornerShape(6.dp))
+                                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                                    ) {
+                                        Text(
+                                            text = "\u26A0\uFE0F SPAM SOSPECHOSO",
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -181,17 +268,30 @@ fun PermisoChip(nombre: String, concedido: Boolean, icono: androidx.compose.ui.g
 
 @Composable
 fun LlamadaItem(llamada: Llamada) {
-    val iconColor = if (llamada.esSpam) Color.Red else Color(0xFF4CAF50)
-    val icon = if (llamada.esSpam) Icons.Default.Warning else Icons.Default.Call
+    val esDesconocido = llamada.numero?.startsWith("Desconocido") == true
+    val iconColor = when {
+        llamada.esSpam -> Color.Red
+        esDesconocido -> Color(0xFF2196F3)
+        else -> Color(0xFF4CAF50)
+    }
+    val icon = when {
+        llamada.esSpam -> Icons.Default.Warning
+        esDesconocido -> Icons.Default.Phone // puedes cambiar por otro icono si lo prefieres
+        else -> Icons.Default.Call
+    }
+
+    val fondo = when {
+        llamada.esSpam -> Color(0xFFFFEBEE)
+        esDesconocido -> Color(0xFFE3F2FD)
+        else -> Color.White
+    }
 
     Card(
         shape = RoundedCornerShape(10.dp),
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (llamada.esSpam) Color(0xFFFFEBEE) else Color.White
-        )
+        colors = CardDefaults.cardColors(containerColor = fondo)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -211,8 +311,11 @@ fun LlamadaItem(llamada: Llamada) {
 
             Column {
                 val numero = llamada.numero ?: "Desconocido"
-                Text(numero, fontWeight = FontWeight.SemiBold)
-                Text("${llamada.fechaHora}", fontSize = 12.sp, color = Color.DarkGray)
+                Text(
+                    numero,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(llamada.fechaHora, fontSize = 12.sp, color = Color.DarkGray)
 
                 if (llamada.esSpam) {
                     Box(
@@ -226,6 +329,22 @@ fun LlamadaItem(llamada: Llamada) {
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp
+                        )
+                    }
+                }
+
+                if (esDesconocido) {
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 4.dp)
+                            .background(Color(0xFF2196F3), RoundedCornerShape(6.dp))
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = "🔒 Número oculto",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
                         )
                     }
                 }
